@@ -3,7 +3,8 @@
 
 void QuadArch::Application::Init()
 {
-	std::cout << "App init" << std::endl;
+	// Init OpenGL
+	std::cout << "Maybe" << std::endl;
 }
 
 void QuadArch::Application::Update()

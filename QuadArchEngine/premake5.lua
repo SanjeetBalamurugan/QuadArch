@@ -13,7 +13,8 @@ project "QuadArchEngine"
 
     includedirs {
         "src",
-        "../vendor/glfw/include"
+        "../vendor/glfw/include",
+        "../vendor/glad"
     }
 
     defines {
@@ -30,8 +31,4 @@ project "QuadArchEngine"
 
         defines {
             "_WINDLL"
-        }
-
-        postbuildcommands {
-            "{COPYFILE} \"%{cfg.targetdir}/%{cfg.targetname}%{cfg.targetext}\" \"../bin/" .. outputdir .. "/Sandbox\""
         }

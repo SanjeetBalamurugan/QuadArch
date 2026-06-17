@@ -6,7 +6,7 @@ workspace "QuadArch"
 
     outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
-    targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+    targetdir ("bin/" .. outputdir)
     objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
     filter "configurations:Debug"
@@ -33,6 +33,9 @@ newaction {
         os.rmdir("bin")
         os.rmdir("bin-int")
         os.rmdir(".vs")
+
+        os.rmdir("vendor/glfw/bin")
+        os.rmdir("vendor/glfw/bin-int")
 
         local function cleanFiles(pattern)
             local files = os.matchfiles(pattern)
