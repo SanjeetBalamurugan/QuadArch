@@ -1,5 +1,6 @@
 #pragma once
 #include "Core.h"
+#include "Window.h"
 
 namespace QuadArch {
 	class QuadAPI Application
@@ -10,5 +11,7 @@ namespace QuadArch {
 		virtual void Init();
 		virtual void Update();
 		virtual void End();
+	private:
+		Window* m_Window = nullptr;
 	};
 }

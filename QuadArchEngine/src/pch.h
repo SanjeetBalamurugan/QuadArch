@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <cstdlib>
 
 #include <glad/glad.h>
 #include <KHR/khrplatform.h>

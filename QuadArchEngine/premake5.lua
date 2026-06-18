@@ -8,7 +8,8 @@ project "QuadArchEngine"
 
     files {
         "src/**.h",
-        "src/**.cpp"
+        "src/**.cpp",
+        "src/**.c"
     }
 
     includedirs {
@@ -25,10 +26,14 @@ project "QuadArchEngine"
         "GLFW"
     }
 
+    filter "files:src/glad.c"
+        flags { "NoPCH" }
+    filter {}
+
     filter "system:windows"
         systemversion "latest"
-        staticruntime "on"
 
         defines {
             "_WINDLL"
         }
+        defines { "GLFW_INCLUDE_NONE" }

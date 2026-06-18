@@ -1,24 +1,27 @@
 #pragma once
+#include "pch.h"
 #include "Core.h"
 
-struct WindowSpecs {
-	unsigned int width;
-	unsigned int height;
+namespace QuadArch {
+	struct WindowSpecs {
+		unsigned int width = 500;
+		unsigned int height = 500;
 
-	std::string title;
-};
+		std::string title = "TestApp";
+		GLFWwindow* window = nullptr;
+	};
 
-class QuadAPI Window
-{
-public:
-	Window();
-	~Window();
+	class QuadAPI Window
+	{
+	public:
+		void Init();
+		void Update();
+		void Destroy();
 
-	void Init();
-	void Update();
-	void Destroy();
+		const WindowSpecs& GetSpecs() const { return m_Specs; }
 
-private:
-	WindowSpecs* m_Specs = nullptr;
-};
+	private:
+		WindowSpecs m_Specs;
+	};
 
+}

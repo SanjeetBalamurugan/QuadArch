@@ -11,7 +11,8 @@ project "Sandbox"
     includedirs {
         "src",
         "../QuadArchEngine/src",
-        "../vendor/glfw/include"
+        "../vendor/glfw/include",
+        "../vendor/glad"
     }
 
     links {
@@ -20,4 +21,3 @@ project "Sandbox"
 
     filter "system:windows"
         systemversion "latest"
-        staticruntime "on"
