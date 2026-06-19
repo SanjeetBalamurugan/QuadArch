@@ -2,6 +2,7 @@ project "Sandbox"
     kind "ConsoleApp"
     language "C++"
     cppdialect "C++20"
+    staticruntime "Off"
 
     files {
         "src/**.h",
@@ -11,8 +12,7 @@ project "Sandbox"
     includedirs {
         "src",
         "../QuadArchEngine/src",
-        "../vendor/glfw/include",
-        "../vendor/glad"
+        "../vendor/glfw/include"
     }
 
     links {

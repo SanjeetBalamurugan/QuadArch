@@ -1,6 +1,5 @@
 #pragma once
 #include "QuadArch/Core.h"
-#include "pch.h"
 
 namespace QuadArch {
 	class QuadAPI Scene

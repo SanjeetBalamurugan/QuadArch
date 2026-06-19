@@ -1,6 +1,7 @@
 workspace "QuadArch"
     architecture "x64"
     startproject "Sandbox"
+    staticruntime "off"
 
     configurations { "Debug", "Release" }
 

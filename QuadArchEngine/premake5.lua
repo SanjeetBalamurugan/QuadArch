@@ -2,6 +2,7 @@ project "QuadArchEngine"
     kind "SharedLib"
     language "C++"
     cppdialect "C++20"
+    staticruntime "Off"
 
     pchheader "pch.h"
     pchsource "src/pch.cpp"
@@ -23,7 +24,9 @@ project "QuadArchEngine"
     }
 
     links {
-        "GLFW"
+        "GLFW",
+        "opengl32.lib",
+        "dwmapi.lib"
     }
 
     filter "files:src/glad.c"

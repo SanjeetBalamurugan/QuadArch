@@ -1,9 +1,10 @@
 #pragma once
-#include "pch.h"
 #include "QuadArch/Core.h"
 
 #include "Scene/Scene.h"
 #include "Scene/SceneManager.h"
+
+#include <memory>
 
 namespace QuadArch {
 	class QuadAPI ExampleScene : public Scene

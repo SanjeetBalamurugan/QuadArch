@@ -3,9 +3,11 @@
 
 #include "Scene.h"
 
+#include <memory>
+
 namespace QuadArch
 {
-	class SceneManager
+	class QuadAPI SceneManager
 	{
 	public:
 		SceneManager(const SceneManager&) = delete;

@@ -51,9 +51,7 @@ void QuadArch::Application::Init()
 
 void QuadArch::Application::Update()
 {
-	std::unique_ptr<SplashScreen> splash = std::make_unique<SplashScreen>();
-	SceneManager::GetInstance().SetScene(std::move(splash));
-	SceneManager::GetInstance().ChangeScene();
+	m_Game->Init();
 	SceneManager::GetInstance().Init();
 
 	auto lastTime = std::chrono::high_resolution_clock::now();
@@ -65,12 +63,15 @@ void QuadArch::Application::Update()
 		lastTime = currentTime;
 
 		float ts = elapsedTime.count();
+
+		m_Game->Update(ts);
 		SceneManager::GetInstance().Update(ts);
 
 		glfwSwapBuffers(m_Window->GetSpecs().window);
 		glfwPollEvents();
 	}
 
+	m_Game->Destroy();
 	SceneManager::GetInstance().Destroy();
 }
 
