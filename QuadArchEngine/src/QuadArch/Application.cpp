@@ -51,14 +51,27 @@ void QuadArch::Application::Init()
 
 void QuadArch::Application::Update()
 {
+	std::unique_ptr<SplashScreen> splash = std::make_unique<SplashScreen>();
+	SceneManager::GetInstance().SetScene(std::move(splash));
+	SceneManager::GetInstance().ChangeScene();
+	SceneManager::GetInstance().Init();
+
+	auto lastTime = std::chrono::high_resolution_clock::now();
+
 	while (!glfwWindowShouldClose(m_Window->GetSpecs().window))
 	{
-		glClearColor(0.0f, 0.3f, 0.8f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<float> elapsedTime = currentTime - lastTime;
+		lastTime = currentTime;
+
+		float ts = elapsedTime.count();
+		SceneManager::GetInstance().Update(ts);
 
 		glfwSwapBuffers(m_Window->GetSpecs().window);
 		glfwPollEvents();
 	}
+
+	SceneManager::GetInstance().Destroy();
 }
 
 void QuadArch::Application::End()

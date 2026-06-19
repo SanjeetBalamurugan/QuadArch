@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 #include <cstdlib>
+#include <chrono>
+#include <thread>
 
 #include <glad/glad.h>
 #include <KHR/khrplatform.h>

@@ -2,6 +2,11 @@
 #include "Core.h"
 #include "Window.h"
 
+#include "Scene/Scene.h"
+#include "Scene/SceneManager.h"
+
+#include "Scene/ExampleScenes/ExampleScene.h"
+
 namespace QuadArch {
 	class QuadAPI Application
 	{
