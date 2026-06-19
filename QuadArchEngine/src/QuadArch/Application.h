@@ -8,6 +8,11 @@
 
 #include "Scene/ExampleScenes/ExampleScene.h"
 
+#include "Inputs/Input.h"
+#include "Inputs/KeyCodes.h"
+
+#include "Inputs/Mouse.h"
+
 #include <memory>
 
 namespace QuadArch {
@@ -24,5 +29,7 @@ namespace QuadArch {
 	private:
 		Window* m_Window = nullptr;
 		std::unique_ptr<Game> m_Game = nullptr;
+
+		std::unique_ptr<EventBuffer> m_EventBuffer;
 	};
 }

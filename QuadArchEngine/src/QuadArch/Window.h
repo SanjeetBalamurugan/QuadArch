@@ -4,6 +4,10 @@
 #include <string>
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
+#include <memory>
+
+#include "Events/EventTypes.h"
+#include "Events/EventBuffer.h"
 
 namespace QuadArch {
 	struct WindowSpecs {
@@ -22,7 +26,6 @@ namespace QuadArch {
 		void Destroy();
 
 		const WindowSpecs& GetSpecs() const { return m_Specs; }
-
 	private:
 		WindowSpecs m_Specs;
 	};

@@ -6,3 +6,7 @@
 #include "Scene/Scene.h"
 #include "Scene/SceneManager.h"
 #include "Scene/ExampleScenes/ExampleScene.h"
+
+#include "Inputs/Input.h"
+#include "Inputs/KeyCodes.h"
+#include "Inputs/Mouse.h"

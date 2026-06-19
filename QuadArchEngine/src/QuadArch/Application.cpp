@@ -47,6 +47,43 @@ void QuadArch::Application::Init()
 
 	void* proc = (void*)glfwGetProcAddress("glGetString");
 	std::cout << "Direct driver test (glGetString address): " << proc << std::endl;
+
+	m_EventBuffer = std::make_unique<EventBuffer>();
+	glfwSetWindowUserPointer(m_Window->GetSpecs().window, this);
+	glfwSetKeyCallback(m_Window->GetSpecs().window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+		Application* instance = static_cast<Application*>(glfwGetWindowUserPointer(window));
+
+		if (instance)
+		{
+			KeyCode engineKey = static_cast<KeyCode>(key);
+
+			if (action == 1)      // GLFW_PRESS
+			{
+				Input::RecordKeyPress(engineKey);
+			}
+			else if (action == 0) // GLFW_RELEASE
+			{
+				Input::RecordKeyRelease(engineKey);
+			}
+		}
+	});
+
+	glfwSetCursorPosCallback(m_Window->GetSpecs().window, [](GLFWwindow* window, double xpos, double ypos) {
+		Mouse::RecordMousePosition(static_cast<float>(xpos), static_cast<float>(ypos));
+	});
+
+	glfwSetMouseButtonCallback(m_Window->GetSpecs().window, [](GLFWwindow* window, int button, int action, int mods) {
+		MouseCode engineBtn = static_cast<MouseCode>(button);
+
+		if (action == 1)      // GLFW_PRESS
+		{
+			Mouse::RecordButtonPress(engineBtn);
+		}
+		else if (action == 0) // GLFW_RELEASE
+		{
+			Mouse::RecordButtonRelease(engineBtn);
+		}
+	});
 }
 
 void QuadArch::Application::Update()
@@ -58,6 +95,10 @@ void QuadArch::Application::Update()
 
 	while (!glfwWindowShouldClose(m_Window->GetSpecs().window))
 	{
+		Input::ClearFrameStates();
+		Mouse::ClearFrameStates();
+		glfwPollEvents();
+
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<float> elapsedTime = currentTime - lastTime;
 		lastTime = currentTime;
@@ -68,7 +109,6 @@ void QuadArch::Application::Update()
 		SceneManager::GetInstance().Update(ts);
 
 		glfwSwapBuffers(m_Window->GetSpecs().window);
-		glfwPollEvents();
 	}
 
 	m_Game->Destroy();
