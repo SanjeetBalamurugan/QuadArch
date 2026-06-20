@@ -3,11 +3,14 @@
 
 #include <memory>
 #include <iostream>
+#include <string>
 
 class ExampleScene : public QuadArch::Scene
 {
 public:
-	void Init() override {}
+	void Init() override 
+	{
+	}
 	void OnUpdate(float ts) override
 	{
 		QuadArch::RenderCommand::SetClearColor(r, 0.3f, 0.8f, 1.0f);

@@ -12,7 +12,8 @@ project "Sandbox"
     includedirs {
         "src",
         "../QuadArchEngine/src",
-        "../vendor/glfw/include"
+        "../vendor/glfw/include",
+        "../vendor/glm/"
     }
 
     links {

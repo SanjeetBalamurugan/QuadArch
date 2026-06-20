@@ -16,7 +16,8 @@ project "QuadArchEngine"
     includedirs {
         "src",
         "../vendor/glfw/include",
-        "../vendor/glad"
+        "../vendor/glad",
+        "../vendor/glm/"
     }
 
     defines {

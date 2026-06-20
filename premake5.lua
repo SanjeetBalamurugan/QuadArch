@@ -19,7 +19,9 @@ workspace "QuadArch"
         optimize "On"
 
     -- Dependencies
+    group "Dependencies"
     include "vendor/glfw"
+    group ""
 
     -- Projects
     include "QuadArchEngine"
