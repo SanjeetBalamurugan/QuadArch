@@ -11,7 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#define TEST_COUNT 500
+#define TEST_COUNT 500000
 
 struct Cube {
     glm::vec3 pos;
@@ -45,6 +45,7 @@ public:
         std::cout << "Engine Active Working Directory: " << std::filesystem::current_path() << std::endl;
         m_defaultTex = std::make_shared<QuadArch::Texture>("assets/default_texture.png");
         m_lit = std::make_shared<QuadArch::LitMaterial>(0, m_defaultTex, glm::vec4(0.0f, 0.0f, 0.5f, 1.0f));
+        m_lit->SetGPUInstancing(true);
 
         QuadArch::RenderCommand::Blend(false);
         QuadArch::RenderCommand::SetCursorMode(m_Focused);
@@ -52,9 +53,6 @@ public:
 
     void OnUpdate(float ts) override {
         QuadArch::RenderCommand::Clear();
-        auto* camera = QuadArch::Renderer::GetActiveCamera();
-        if (camera)
-            m_SkyboxMat->DrawSkybox(*camera);
 
         m_ElapsedTime += ts;
         m_FrameCount++;
@@ -98,6 +96,10 @@ public:
         for (const auto& c : m_cubes) {
             QuadArch::Renderer::DrawCube(c.pos, c.scale, c.rot, m_lit);
         }
+
+        auto* camera = QuadArch::Renderer::GetActiveCamera();
+        if (camera)
+            m_SkyboxMat->DrawSkybox(*camera);
     }
 
     void Destroy() override {}

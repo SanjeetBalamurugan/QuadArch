@@ -31,6 +31,9 @@ namespace QuadArch
 		unsigned int GetMaterialID() const { return m_MaterialID; }
 		MaterialType GetType() const { return m_Type; }
 
+		bool IsInstancingEnabled() const { return m_EnableGPUInstancing; }
+		void SetGPUInstancing(bool enable) { m_EnableGPUInstancing = enable; }
+
 		const Texture* GetTexture() const { return m_texture.get(); }
 
 	protected:
@@ -40,6 +43,7 @@ namespace QuadArch
 	private:
 		unsigned int m_MaterialID;
 		std::shared_ptr<Texture> m_texture;
+		bool m_EnableGPUInstancing = false;
 	};
 
 	class QuadAPI LitMaterial : public Material {

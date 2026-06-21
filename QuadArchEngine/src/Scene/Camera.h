@@ -25,6 +25,7 @@ namespace QuadArch {
 
         glm::vec3 GetPosition() const { return m_Position; }
         void SetPosition(const glm::vec3& position) { m_Position = position; }
+        float GetDistanceFromCamera(const glm::vec3& position) const { return glm::distance(m_Position, position); }
 
     private:
         void UpdateCameraVectors();

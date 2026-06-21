@@ -1,10 +1,15 @@
 #include "pch.h"
 #include "Renderer.h"
 
+#define NOMINMAX
+#undef min
+#undef max
+
 namespace QuadArch
 {
-	RendererStorage Renderer::m_Data;
+    RendererStorage Renderer::m_Data;
     std::shared_ptr<QuadArch::Camera3D> QuadArch::Renderer::s_ActiveCamera = nullptr;
+    bool Renderer::s_FrustumCullingEnabled = true;
 
     void QuadArch::Renderer::SetActiveCamera(std::shared_ptr<Camera3D> camera)
     {
@@ -16,131 +21,283 @@ namespace QuadArch
         return s_ActiveCamera.get();
     }
 
-	void Renderer::Init()
-	{
-		m_Data.vertexBufferBase = new TriangleData[m_Data.MaxVertexPerBatch];
+    void Renderer::Init()
+    {
+        m_Data.vertexBufferBase = new TriangleData[m_Data.MaxVertexPerBatch];
 
-		m_Data.vao = new VertexArray();
-		m_Data.vbo = new VertexBuffer();
-		m_Data.layout = new VertexBufferLayout();
-		m_Data.ibo = new IndexBuffer();
+        m_Data.vao = new VertexArray();
+        m_Data.vbo = new VertexBuffer();
+        m_Data.layout = new VertexBufferLayout();
+        m_Data.ibo = new IndexBuffer();
 
-		m_Data.vao->Bind();
-		m_Data.vbo->Bind();
+        m_Data.vao->Bind();
+        m_Data.vbo->Bind();
 
-		m_Data.layout->Push<float>(3); // Position
-		m_Data.layout->Push<float>(4); // Vertex Color
-		m_Data.layout->Push<float>(2); // UV
+        m_Data.layout->Push<float>(3); // Position
+        m_Data.layout->Push<float>(4); // Vertex Color
+        m_Data.layout->Push<float>(2); // UV
 
-		m_Data.layout->Push<float>(4); // Model Matrix Row 1
-		m_Data.layout->Push<float>(4); // Model Matrix Row 2
-		m_Data.layout->Push<float>(4); // Model Matrix Row 3
-		m_Data.layout->Push<float>(4); // Model Matrix Row 4
+        m_Data.layout->Push<float>(4); // Model Matrix Row 1
+        m_Data.layout->Push<float>(4); // Model Matrix Row 2
+        m_Data.layout->Push<float>(4); // Model Matrix Row 3
+        m_Data.layout->Push<float>(4); // Model Matrix Row 4
 
-		unsigned int totalVertexBufferSize = m_Data.MaxVertexPerBatch * sizeof(TriangleData);
-		m_Data.vbo->CreateBuffer(nullptr, totalVertexBufferSize);
-		m_Data.vao->AddBuffer(*m_Data.vbo, *m_Data.layout);
+        unsigned int totalVertexBufferSize = m_Data.MaxVertexPerBatch * sizeof(TriangleData);
+        m_Data.vbo->CreateBuffer(nullptr, totalVertexBufferSize);
+        m_Data.vao->AddBuffer(*m_Data.vbo, *m_Data.layout);
 
-		unsigned int* indicies = new unsigned int[m_Data.MaxVertexPerBatch];
-		for (unsigned int i = 0; i < m_Data.MaxVertexPerBatch; i++)
-		{
-			indicies[i] = i;
-		}
+        unsigned int* indicies = new unsigned int[m_Data.MaxVertexPerBatch];
+        for (unsigned int i = 0; i < m_Data.MaxVertexPerBatch; i++)
+        {
+            indicies[i] = i;
+        }
 
-		m_Data.ibo->CreateBuffer(indicies, m_Data.MaxVertexPerBatch);
-		delete[] indicies;
-	}
+        m_Data.ibo->CreateBuffer(indicies, m_Data.MaxVertexPerBatch);
+        delete[] indicies;
 
-	void Renderer::ShutDown()
-	{
-		delete[] m_Data.vertexBufferBase;
-	}
+        // Instanced
+        glGenBuffers(1, &m_Data.instanceMatrixVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, m_Data.instanceMatrixVBO);
+        glBufferData(GL_ARRAY_BUFFER, m_Data.MaxTrianglePerBatch * sizeof(glm::mat4), nullptr, GL_STREAM_DRAW);
 
-	void Renderer::BeginScene()
-	{
-		m_Data.commandQueue.clear();
-	}
+        TriangleData cubeVertices[36];
+        {
+            glm::vec3 v0 = { -0.5f, -0.5f, -0.5f };
+            glm::vec3 v1 = { 0.5f, -0.5f, -0.5f };
+            glm::vec3 v2 = { 0.5f, 0.5f, -0.5f };
+            glm::vec3 v3 = { -0.5f, 0.5f, -0.5f };
+            glm::vec3 v4 = { -0.5f, -0.5f, 0.5f };
+            glm::vec3 v5 = { 0.5f, -0.5f, 0.5f };
+            glm::vec3 v6 = { 0.5f, 0.5f, 0.5f };
+            glm::vec3 v7 = { -0.5f, 0.5f, 0.5f };
+
+            glm::vec2 uvBL = { 0.0f, 0.0f };
+            glm::vec2 uvBR = { 1.0f, 0.0f };
+            glm::vec2 uvTR = { 1.0f, 1.0f };
+            glm::vec2 uvTL = { 0.0f, 1.0f };
+
+            glm::vec4 color = glm::vec4(1.0f);
+            glm::mat4 identity = glm::mat4(1.0f);
+
+            unsigned int idx = 0;
+            auto pushFace = [&](const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& d)
+            {
+                cubeVertices[idx++] = TriangleData{ a, color, uvBL, identity };
+                cubeVertices[idx++] = TriangleData{ b, color, uvBR, identity };
+                cubeVertices[idx++] = TriangleData{ c, color, uvTR, identity };
+                cubeVertices[idx++] = TriangleData{ c, color, uvTR, identity };
+                cubeVertices[idx++] = TriangleData{ d, color, uvTL, identity };
+                cubeVertices[idx++] = TriangleData{ a, color, uvBL, identity };
+            };
+
+            pushFace(v4, v5, v6, v7);
+            pushFace(v1, v0, v3, v2);
+            pushFace(v5, v1, v2, v6);
+            pushFace(v0, v4, v7, v3);
+            pushFace(v7, v6, v2, v3);
+            pushFace(v0, v1, v5, v4);
+        }
+
+        glGenBuffers(1, &m_Data.instanceCubeVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, m_Data.instanceCubeVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
+
+        glGenVertexArrays(1, &m_Data.instanceCubeVAO);
+        glBindVertexArray(m_Data.instanceCubeVAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, m_Data.instanceCubeVBO);
+        m_Data.ibo->Bind();
+
+        {
+            const auto& elements = m_Data.layout->GetElements();
+            unsigned int offset = 0;
+            for (unsigned int i = 0; i < elements.size(); i++) {
+                const auto& element = elements[i];
+                glEnableVertexAttribArray(i);
+                glVertexAttribPointer(i, element.count, element.type,
+                    element.normalised, m_Data.layout->GetStride(), (const void*)offset);
+                offset += element.count * VertexBufferElement::GetSizeOfType(element.type);
+            }
+        }
+
+        glBindBuffer(GL_ARRAY_BUFFER, m_Data.instanceMatrixVBO);
+        for (unsigned int i = 0; i < 4; i++) {
+            unsigned int location = 3 + i;
+            glEnableVertexAttribArray(location);
+            glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * sizeof(glm::vec4)));
+            glVertexAttribDivisor(location, 1);
+        }
+
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    void Renderer::ShutDown()
+    {
+        delete[] m_Data.vertexBufferBase;
+    }
+
+    void Renderer::BeginScene()
+    {
+        m_Data.commandQueue.clear();
+        m_Data.cullingFrustumDirty = true;
+    }
+
+    void Renderer::SetFrustumCullingEnabled(bool enabled)
+    {
+        s_FrustumCullingEnabled = enabled;
+    }
+
+    bool Renderer::IsFrustumCullingEnabled()
+    {
+        return s_FrustumCullingEnabled;
+    }
+
+    bool Renderer::TryGetCullingFrustum(const Frustum*& outFrustum)
+    {
+        if (!s_FrustumCullingEnabled)
+            return false;
+
+        if (m_Data.cullingFrustumDirty)
+        {
+            Camera3D* camera = GetActiveCamera();
+            if (camera)
+            {
+                m_Data.cullingFrustum = Frustum::FromViewProjection(camera->GetViewProjectionMatrix());
+                m_Data.hasCullingFrustum = true;
+            }
+            else
+            {
+                m_Data.hasCullingFrustum = false;
+            }
+            m_Data.cullingFrustumDirty = false;
+        }
+
+        if (!m_Data.hasCullingFrustum)
+            return false;
+
+        outFrustum = &m_Data.cullingFrustum;
+        return true;
+    }
 
     void Renderer::DrawBatch()
     {
         if (m_Data.commandQueue.empty()) return;
 
+        Camera3D* activeCamera = GetActiveCamera();
+        glm::vec3 cameraPosition = activeCamera->GetPosition();
+
         std::sort(m_Data.commandQueue.begin(), m_Data.commandQueue.end(), [](const RendererCommand& a, const RendererCommand& b) {
             if (a.material == b.material) return false;
             if (!a.material) return true;
             if (!b.material) return false;
-
             if (a.material->GetType() != b.material->GetType())
                 return static_cast<int>(a.material->GetType()) < static_cast<int>(b.material->GetType());
-
             return a.material->GetMaterialID() < b.material->GetMaterialID();
             });
+
+        std::vector<glm::mat4> instanceMatrices;
+        instanceMatrices.reserve(m_Data.commandQueue.size() / INSTANCED_FACTOR);
 
         unsigned int queueIndex = 0;
         while (queueIndex < m_Data.commandQueue.size())
         {
             auto activeBatchMaterial = m_Data.commandQueue[queueIndex].material;
 
-            m_Data.vertexBufferPtr = m_Data.vertexBufferBase;
-            unsigned int accumulatedTriangles = 0;
-            while (queueIndex < m_Data.commandQueue.size() && accumulatedTriangles < m_Data.MaxTrianglePerBatch)
+            if (activeBatchMaterial && activeBatchMaterial->IsInstancingEnabled())
             {
-                const auto& command = m_Data.commandQueue[queueIndex];
+                instanceMatrices.clear();
 
-                if (command.material != activeBatchMaterial)
+                while (queueIndex < m_Data.commandQueue.size())
                 {
-                    if (!command.material || !activeBatchMaterial ||
-                        command.material->GetMaterialID() != activeBatchMaterial->GetMaterialID())
-                    {
-                        break;
-                    }
+                    const auto& command = m_Data.commandQueue[queueIndex];
+                    if (command.material != activeBatchMaterial) break;
+                    instanceMatrices.push_back(command.modelMatrix);
+                    queueIndex += 12;
                 }
 
-                m_Data.vertexBufferPtr->position = command.p0;
-                m_Data.vertexBufferPtr->color = command.color;
-                m_Data.vertexBufferPtr->uv = command.uv0;
-                m_Data.vertexBufferPtr->modelMatrix = command.modelMatrix;
-                m_Data.vertexBufferPtr++;
+                if (!instanceMatrices.empty())
+                {
+                    activeBatchMaterial->Bind();
+                    Camera3D* activeCamera = GetActiveCamera();
+                    if (activeCamera)
+                    {
+                        ShaderProgram* program = Material::GetShaderPipeline(activeBatchMaterial->GetType());
+                        if (program)
+                        {
+                            glm::mat4 viewProj = activeCamera->GetViewProjectionMatrix();
+                            program->SetUniformMat4("u_ViewProjection", viewProj);
+                        }
+                    }
 
-                m_Data.vertexBufferPtr->position = command.p1;
-                m_Data.vertexBufferPtr->color = command.color;
-                m_Data.vertexBufferPtr->uv = command.uv1;
-                m_Data.vertexBufferPtr->modelMatrix = command.modelMatrix;
-                m_Data.vertexBufferPtr++;
-
-                m_Data.vertexBufferPtr->position = command.p2;
-                m_Data.vertexBufferPtr->color = command.color;
-                m_Data.vertexBufferPtr->uv = command.uv2;
-                m_Data.vertexBufferPtr->modelMatrix = command.modelMatrix;
-                m_Data.vertexBufferPtr++;
-
-                accumulatedTriangles++;
-                queueIndex++;
+                    glBindBuffer(GL_ARRAY_BUFFER, m_Data.instanceMatrixVBO);
+                    glBufferData(GL_ARRAY_BUFFER, instanceMatrices.size() * sizeof(glm::mat4), instanceMatrices.data(), GL_STREAM_DRAW);
+                    glBindVertexArray(m_Data.instanceCubeVAO);
+                    glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, static_cast<GLsizei>(instanceMatrices.size()));
+                }
             }
-
-            unsigned int verticesCount = accumulatedTriangles * 3;
-            if (verticesCount > 0 && activeBatchMaterial)
+            else
             {
-                activeBatchMaterial->Bind();
-                Camera3D* activeCamera = GetActiveCamera();
-                if (activeCamera)
+                m_Data.vertexBufferPtr = m_Data.vertexBufferBase;
+                unsigned int accumulatedTriangles = 0;
+                while (queueIndex < m_Data.commandQueue.size() && accumulatedTriangles < m_Data.MaxTrianglePerBatch)
                 {
-                    ShaderProgram* program = Material::GetShaderPipeline(activeBatchMaterial->GetType());
-                    if (program)
-                    {
-                        glm::mat4 viewProj = activeCamera->GetViewProjectionMatrix();
-                        program->SetUniformMat4("u_ViewProjection", viewProj);
-                    }
+                    const auto& command = m_Data.commandQueue[queueIndex];
+                    if (command.material != activeBatchMaterial) break;
+
+                    m_Data.vertexBufferPtr->position = command.p0;
+                    m_Data.vertexBufferPtr->color = command.color;
+                    m_Data.vertexBufferPtr->uv = command.uv0;
+                    m_Data.vertexBufferPtr->modelMatrix = command.modelMatrix;
+                    m_Data.vertexBufferPtr++;
+
+                    m_Data.vertexBufferPtr->position = command.p1;
+                    m_Data.vertexBufferPtr->color = command.color;
+                    m_Data.vertexBufferPtr->uv = command.uv1;
+                    m_Data.vertexBufferPtr->modelMatrix = command.modelMatrix;
+                    m_Data.vertexBufferPtr++;
+
+                    m_Data.vertexBufferPtr->position = command.p2;
+                    m_Data.vertexBufferPtr->color = command.color;
+                    m_Data.vertexBufferPtr->uv = command.uv2;
+                    m_Data.vertexBufferPtr->modelMatrix = command.modelMatrix;
+                    m_Data.vertexBufferPtr++;
+
+                    accumulatedTriangles++;
+                    queueIndex++;
                 }
-                ExecuteBatch(verticesCount, activeBatchMaterial);
+
+                unsigned int verticesCount = accumulatedTriangles * 3;
+                if (verticesCount > 0 && activeBatchMaterial)
+                {
+                    activeBatchMaterial->Bind();
+                    Camera3D* activeCamera = GetActiveCamera();
+                    if (activeCamera)
+                    {
+                        ShaderProgram* program = Material::GetShaderPipeline(activeBatchMaterial->GetType());
+                        if (program)
+                        {
+                            glm::mat4 viewProj = activeCamera->GetViewProjectionMatrix();
+                            program->SetUniformMat4("u_ViewProjection", viewProj);
+                        }
+                    }
+                    ExecuteBatch(verticesCount, activeBatchMaterial);
+                }
             }
         }
         m_Data.commandQueue.clear();
     }
 
-
     void Renderer::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotationRadians, std::shared_ptr<Material> material)
     {
+        const Frustum* frustum = nullptr;
+        if (TryGetCullingFrustum(frustum))
+        {
+            float boundingRadius = 0.5f * glm::length(glm::vec3(size, 0.0f));
+            if (!frustum->IntersectsSphere(position, boundingRadius))
+                return;
+        }
+
         glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
         model = glm::rotate(model, rotationRadians, glm::vec3(0.0f, 0.0f, 1.0f));
         model = glm::scale(model, glm::vec3(size, 1.0f));
@@ -159,11 +316,28 @@ namespace QuadArch
 
     void Renderer::DrawTriangle(const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2, std::shared_ptr<Material> material)
     {
+        const Frustum* frustum = nullptr;
+        if (TryGetCullingFrustum(frustum))
+        {
+            glm::vec3 centroid = (p0 + p1 + p2) / 3.0f;
+            float radius = glm::max(glm::distance(centroid, p0), glm::max(glm::distance(centroid, p1), glm::distance(centroid, p2)));
+            if (!frustum->IntersectsSphere(centroid, radius))
+                return;
+        }
+
         m_Data.commandQueue.emplace_back(p0, p1, p2, glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.0f), glm::vec2(0.5f, 1.0f), glm::vec4(1.0f), glm::mat4(1.0f), material);
     }
 
     void Renderer::DrawCube(const glm::vec3& position, const glm::vec3& size, const glm::vec3& rotationRadians, std::shared_ptr<Material> material)
     {
+        const Frustum* frustum = nullptr;
+        if (TryGetCullingFrustum(frustum))
+        {
+            float boundingRadius = 0.5f * glm::length(size);
+            if (!frustum->IntersectsSphere(position, boundingRadius))
+                return;
+        }
+
         glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
         model = glm::rotate(model, rotationRadians.x, glm::vec3(1.0f, 0.0f, 0.0f));
         model = glm::rotate(model, rotationRadians.y, glm::vec3(0.0f, 1.0f, 0.0f));

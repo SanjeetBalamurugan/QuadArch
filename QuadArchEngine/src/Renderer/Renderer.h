@@ -7,8 +7,10 @@
 #include "Buffers/VertexBufferLayout.h"
 #include "Material.h"
 #include "Scene/Camera.h"
+#include "Scene/Frustum.h"
 
 #define MAX_TRIANGLE_PER_BATCH 9000
+#define INSTANCED_FACTOR 12
 
 namespace QuadArch
 {
@@ -44,6 +46,14 @@ namespace QuadArch
 		IndexBuffer* ibo = nullptr;
 		VertexBufferLayout* layout = nullptr;
 
+		unsigned int instanceCubeVAO = 0;
+		unsigned int instanceCubeVBO = 0;
+		unsigned int instanceMatrixVBO = 0;
+
+		Frustum cullingFrustum;
+		bool cullingFrustumDirty = true;
+		bool hasCullingFrustum = false;
+
 		TriangleData* vertexBufferBase = nullptr;
 		TriangleData* vertexBufferPtr = nullptr;
 
@@ -69,10 +79,15 @@ namespace QuadArch
 
 		static void SetActiveCamera(std::shared_ptr<Camera3D> camera);
 		static Camera3D* GetActiveCamera();
+
+		static void SetFrustumCullingEnabled(bool enabled);
+		static bool IsFrustumCullingEnabled();
 	private:
 		static RendererStorage m_Data;
 		static std::shared_ptr<Camera3D> s_ActiveCamera;
+		static bool s_FrustumCullingEnabled;
 	protected:
 		static void ExecuteBatch(unsigned int count, std::shared_ptr<Material> activeMaterial);
+		static bool TryGetCullingFrustum(const Frustum*& outFrustum);
 	};
 }
