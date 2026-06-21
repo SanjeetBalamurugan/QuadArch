@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Application.h"
 
+#include "Renderer/Renderer.h"
+
 static void GLFWErrorCallback(int error_code, const char* description)
 {
 	std::cerr << "[GLFW Error] (" << error_code << "): " << description << std::endl;
@@ -9,17 +11,21 @@ static void GLFWErrorCallback(int error_code, const char* description)
 static void GLFWFrameSizeCallback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
+	
+	auto* camera = QuadArch::Renderer::GetActiveCamera();
+	if (camera && height > 0 && width > 0)
+		camera->SetAspectRatio((float)width / (float)height);
 }
 
 void QuadArch::Application::Init()
 {
-	glfwSetErrorCallback(GLFWErrorCallback);
-
 	if (!glfwInit())
 	{
 		std::cout << "OpenGl Init Failed!!" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
+
+	glfwSetErrorCallback(GLFWErrorCallback);
 
 	std::cout << "GLFW Compile Version: "
 		<< GLFW_VERSION_MAJOR << "."
@@ -41,6 +47,14 @@ void QuadArch::Application::Init()
 		glfwTerminate();
 		std::exit(EXIT_FAILURE);
 	}
+	
+#ifdef DEBUG
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback([](GLenum, GLenum, GLuint, GLenum severity, GLsizei length, const GLchar* message, const void*)
+		{
+			std::cerr << "[GL] " << message << std::endl;
+		}, nullptr);
+#endif // DEBUG
 
 	glfwSetFramebufferSizeCallback(m_Window->GetSpecs().window, GLFWFrameSizeCallback);
 	glViewport(0, 0, m_Window->GetSpecs().width, m_Window->GetSpecs().height);
@@ -84,10 +98,15 @@ void QuadArch::Application::Init()
 			Mouse::RecordButtonRelease(engineBtn);
 		}
 	});
+
+	Renderer::Init();
 }
 
 void QuadArch::Application::Update()
 {
+	// glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+
 	m_Game->Init();
 	SceneManager::GetInstance().Init();
 
@@ -95,6 +114,8 @@ void QuadArch::Application::Update()
 
 	while (!glfwWindowShouldClose(m_Window->GetSpecs().window))
 	{
+		Renderer::BeginScene();
+
 		Input::ClearFrameStates();
 		Mouse::ClearFrameStates();
 		glfwPollEvents();
@@ -108,11 +129,14 @@ void QuadArch::Application::Update()
 		m_Game->Update(ts);
 		SceneManager::GetInstance().Update(ts);
 
+		Renderer::DrawBatch();
 		glfwSwapBuffers(m_Window->GetSpecs().window);
 	}
 
 	m_Game->Destroy();
 	SceneManager::GetInstance().Destroy();
+
+	Renderer::ShutDown();
 }
 
 void QuadArch::Application::End()

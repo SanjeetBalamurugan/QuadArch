@@ -17,7 +17,8 @@ project "QuadArchEngine"
         "src",
         "../vendor/glfw/include",
         "../vendor/glad",
-        "../vendor/glm/"
+        "../vendor/glm/",
+        "../vendor/stb/"
     }
 
     defines {
@@ -27,7 +28,8 @@ project "QuadArchEngine"
     links {
         "GLFW",
         "opengl32.lib",
-        "dwmapi.lib"
+        "dwmapi.lib",
+        "stb"
     }
 
     filter "files:src/glad.c"

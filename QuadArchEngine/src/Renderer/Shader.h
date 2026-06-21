@@ -4,6 +4,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -34,20 +35,26 @@ namespace QuadArch
 		ShaderProgram();
 		~ShaderProgram();
 
+		ShaderProgram(const ShaderProgram&) = delete;
+		ShaderProgram& operator=(const ShaderProgram&) = delete;
+		ShaderProgram(ShaderProgram&&) noexcept = default;
+		ShaderProgram& operator=(ShaderProgram&&) noexcept = default;
+
 		void Push(std::unique_ptr<Shader> shader);
-		void Link() const;
+		void Link();
+		void UseShader() const;
 		void Unbind();
 
-		unsigned int GetUniformLocation(const char* name);
+		int GetUniformLocation(const std::string& name);
 
-		void SetUniform1f(const char* name, float v0);
-		void SetUniform4f(const char* name, float v0, float v1, float v2, float v3);
-		void SetUniformMat4(const char* name, glm::mat4 mat);
+		void SetUniform1f(const std::string& name, float v0);
+		void SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3);
+		void SetUniformMat4(const std::string& name, const glm::mat4& mat);
 	private:
 		unsigned int m_ProgramID;
 		bool m_Unbind = false;
 
-		std::unordered_map<const char*, int> m_UniformLocationCache;
+		std::unordered_map<std::string, int> m_UniformLocationCache;
 		std::vector<std::unique_ptr<Shader>> m_Shaders;
 	};
 }

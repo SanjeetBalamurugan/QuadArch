@@ -21,6 +21,7 @@ workspace "QuadArch"
     -- Dependencies
     group "Dependencies"
     include "vendor/glfw"
+    include "vendor/stb"
     group ""
 
     -- Projects

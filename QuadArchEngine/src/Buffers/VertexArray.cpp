@@ -21,7 +21,7 @@ void QuadArch::VertexArray::AddBuffer(const VertexBuffer& vbo, const VertexBuffe
 	for (unsigned int i = 0; i < elements.size(); i++) {
 		const auto& element = elements[i];
 		glEnableVertexAttribArray(i);
-		glVertexAttribPointer(0, element.count, element.type,
+		glVertexAttribPointer(i, element.count, element.type,
 			element.normalised, layout.GetStride(), (const void*)offset);
 		offset += element.count * VertexBufferElement::GetSizeOfType(element.type);
 	}
