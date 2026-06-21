@@ -95,3 +95,122 @@ void main()
     program->Link();
 }
 
+QuadArch::SkyBoxMaterial::~SkyBoxMaterial()
+{
+    if (m_VAO != 0) glDeleteVertexArrays(1, &m_VAO);
+    if (m_VBO != 0) glDeleteBuffers(1, &m_VBO);
+}
+
+void QuadArch::SkyBoxMaterial::DrawSkybox(const Camera3D& camera)
+{
+    if (m_VAO == 0)
+    {
+        InitSkyboxBuffers();
+    }
+
+    glDepthFunc(GL_LEQUAL);
+    Bind();
+
+    ShaderProgram* program = GetShaderPipeline(MaterialType::Skybox);
+    if (program)
+    {
+        program->SetUniformMat4("u_View", camera.GetViewMatrix());
+        program->SetUniformMat4("u_Projection", camera.GetProjectionMatrix());
+    }
+
+    glBindVertexArray(m_VAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+    glDepthFunc(GL_LESS);
+}
+
+void QuadArch::SkyBoxMaterial::Bind() const
+{
+    ShaderProgram* program = GetShaderPipeline(m_Type);
+    if (program)
+    {
+        program->UseShader();
+    }
+
+    if (GetTexture())
+    {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, GetTexture()->GetID());
+    }
+}
+
+void QuadArch::SkyBoxMaterial::CreateShader()
+{
+    if (s_ShaderPipelines.find(MaterialType::Skybox) != s_ShaderPipelines.end())
+    {
+        return;
+    }
+
+    const char* vertexShaderSource = R"glsl(
+#version 330 core
+layout (location = 0) in vec3 aPos;
+
+uniform mat4 u_View;
+uniform mat4 u_Projection;
+
+out vec3 TexCoords;
+
+void main()
+{
+    TexCoords = aPos;
+    mat4 staticView = mat4(mat3(u_View)); 
+    vec4 pos = u_Projection * staticView * vec4(aPos, 1.0);
+    gl_Position = pos.xyww; 
+}
+)glsl";
+
+    const char* fragmentShaderSource = R"glsl(
+#version 330 core
+out vec4 FragColor;
+
+in vec3 TexCoords;
+
+uniform samplerCube skybox;
+
+void main()
+{    
+    FragColor = texture(skybox, TexCoords);
+}
+)glsl";
+
+    auto shaderInstance = std::make_unique<Shader>();
+    shaderInstance->LoadAndCompileShader(vertexShaderSource, GL_VERTEX_SHADER);
+    shaderInstance->LoadAndCompileShader(fragmentShaderSource, GL_FRAGMENT_SHADER);
+
+    s_ShaderPipelines[MaterialType::Skybox] = std::make_unique<ShaderProgram>();
+    auto& program = s_ShaderPipelines[MaterialType::Skybox];
+    program->Push(std::move(shaderInstance));
+    program->Link();
+}
+
+void QuadArch::SkyBoxMaterial::InitSkyboxBuffers()
+{
+    static const float skyboxVertices[] = {
+        -1.0f,  1.0f, -1.0f,  -1.0f, -1.0f, -1.0f,   1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,   1.0f,  1.0f, -1.0f,  -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,  -1.0f, -1.0f, -1.0f,  -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,  -1.0f,  1.0f,  1.0f,  -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,   1.0f, -1.0f,  1.0f,   1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,   1.0f,  1.0f, -1.0f,   1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,  -1.0f,  1.0f,  1.0f,   1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,   1.0f, -1.0f,  1.0f,  -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,   1.0f,  1.0f, -1.0f,   1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,  -1.0f,  1.0f,  1.0f,  -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,  -1.0f, -1.0f,  1.0f,   1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,  -1.0f, -1.0f,  1.0f,   1.0f, -1.0f,  1.0f
+    };
+
+    glGenVertexArrays(1, &m_VAO);
+    glGenBuffers(1, &m_VBO);
+    glBindVertexArray(m_VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glBindVertexArray(0);
+}

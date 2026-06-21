@@ -14,8 +14,6 @@ public:
 	};
 	void Update(float ts) override {};
 	void Destroy() override {};
-private:
-	
 };
 
 int main() {

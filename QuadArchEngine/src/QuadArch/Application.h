@@ -26,6 +26,8 @@ namespace QuadArch {
 		virtual void Init();
 		virtual void Update();
 		virtual void End();
+
+		Window* GetWindow() const { return m_Window; }
 	private:
 		Window* m_Window = nullptr;
 		std::unique_ptr<Game> m_Game = nullptr;

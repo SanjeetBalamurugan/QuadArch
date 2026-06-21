@@ -104,7 +104,7 @@ void QuadArch::Application::Init()
 
 void QuadArch::Application::Update()
 {
-	// glEnable(GL_CULL_FACE);
+	glDisable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 
 	m_Game->Init();

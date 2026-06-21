@@ -1,12 +1,11 @@
 #pragma once
 #include "QuadArch/Core.h"
 
-#include "Material.h"
 #include "Buffers/VertexBuffer.h"
 #include "Buffers/IndexBuffer.h"
 #include "Buffers/VertexArray.h"
 #include "Buffers/VertexBufferLayout.h"
-
+#include "Material.h"
 #include "Scene/Camera.h"
 
 #define MAX_TRIANGLE_PER_BATCH 9000

@@ -1,7 +1,9 @@
 #pragma once
 #include "QuadArch/Core.h"
+
 #include "Shader.h"
 #include "Texture.h"
+#include "Scene/Camera.h"
 
 namespace QuadArch
 {
@@ -29,6 +31,8 @@ namespace QuadArch
 		unsigned int GetMaterialID() const { return m_MaterialID; }
 		MaterialType GetType() const { return m_Type; }
 
+		const Texture* GetTexture() const { return m_texture.get(); }
+
 	protected:
 		static std::unordered_map<MaterialType, std::unique_ptr<ShaderProgram>> s_ShaderPipelines;
 		MaterialType m_Type;
@@ -51,5 +55,25 @@ namespace QuadArch
 
 		void Bind() const override;
 		static void CreateShader();
+	};
+
+	class QuadAPI SkyBoxMaterial : public Material {
+	public:
+		SkyBoxMaterial(unsigned int id, std::shared_ptr<Texture> texture)
+			: Material(id, std::move(texture), MaterialType::Skybox)
+		{
+			this->InitSkyboxBuffers();
+			this->CreateShader();
+		}
+		~SkyBoxMaterial();
+
+		void DrawSkybox(const Camera3D& camera);
+
+		void Bind() const override;
+		static void CreateShader();
+	private:
+		unsigned int m_VAO, m_VBO;
+
+		void InitSkyboxBuffers();
 	};
 }
