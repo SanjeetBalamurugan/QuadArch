@@ -18,7 +18,8 @@ project "QuadArchEngine"
         "../vendor/glfw/include",
         "../vendor/glad",
         "../vendor/glm/",
-        "../vendor/stb/"
+        "../vendor/stb/",
+        "../vendor/tinyobjloader/"
     }
 
     defines {
